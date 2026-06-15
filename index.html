@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reto del Gimnasio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#13161A; --surface:#1D2227; --surface2:#262B31;
+    --chalk:#F2EFE9; --muted:#7B838C; --line:#2A2F35;
+    --accentA:#FF6B4A; --accentB:#4FD1C5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--chalk);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:720px;margin:0 auto;padding:0 16px 32px;}
+  .header{border-bottom:1px solid var(--line);padding:20px 16px 16px;}
+  .header-row{display:flex;justify-content:space-between;align-items:flex-start;max-width:720px;margin:0 auto;}
+  .eyebrow{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+  .title{font-family:'Oswald',sans-serif;font-size:22px;font-weight:600;margin-top:2px;}
+  .title .vs{color:var(--muted);font-weight:400;}
+  .gear{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;color:var(--muted);cursor:pointer;display:flex;}
+  .gear svg{width:18px;height:18px;}
+  .scoreboards{display:flex;gap:12px;max-width:720px;margin:16px auto 0;}
+  .scorecard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 16px;flex:1;text-align:center;}
+  .scorecard .val{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;line-height:1;letter-spacing:-1px;}
+  .scorecard .lab{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:1px;}
+  .meta{max-width:720px;margin:10px auto 0;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+  .meta .notstarted{color:var(--accentB);}
+
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
+  .statcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;}
+  .statcard .dotrow{display:flex;align-items:center;gap:8px;}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .statname{font-size:13px;color:var(--muted);font-weight:500;}
+  .statcount{font-family:'Oswald',sans-serif;font-size:32px;font-weight:700;margin-top:4px;}
+  .statcount span{font-size:13px;color:var(--muted);font-weight:400;text-transform:uppercase;}
+
+  .logbtn{width:100%;margin-top:16px;padding:14px 0;background:var(--chalk);color:var(--bg);border:none;border-radius:12px;font-family:'Oswald',sans-serif;font-weight:600;font-size:16px;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;}
+  .logbtn svg{width:18px;height:18px;}
+
+  .section{margin-top:24px;}
+  .section-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;color:var(--muted);}
+  .section-head svg{width:16px;height:16px;}
+  .section-head h3{font-family:'Oswald',sans-serif;font-size:14px;font-weight:500;letter-spacing:1px;text-transform:uppercase;margin:0;}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;}
+
+  /* chart */
+  .chart{display:flex;align-items:flex-end;gap:6px;height:180px;padding-top:20px;position:relative;border-bottom:1px solid var(--line);}
+  .chart .target-line{position:absolute;left:0;right:0;border-top:1px dashed var(--muted);font-size:10px;color:var(--muted);text-align:right;padding-right:2px;}
+  .week-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;}
+  .bars{display:flex;gap:2px;align-items:flex-end;height:160px;width:100%;justify-content:center;}
+  .bar{width:40%;border-radius:3px 3px 0 0;min-height:2px;}
+  .bar.a{background:var(--accentA);}
+  .bar.b{background:var(--accentB);}
+  .week-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);}
+  .chart-legend{display:flex;gap:16px;margin-top:10px;font-size:11px;color:var(--muted);}
+  .chart-legend .item{display:flex;align-items:center;gap:4px;}
+
+  /* calendar */
+  .cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .navbtn{background:var(--surface2);border:1px solid var(--line);border-radius:8px;color:var(--chalk);padding:6px;cursor:pointer;display:flex;}
+  .navbtn svg{width:16px;height:16px;}
+  .cal-month{font-family:'Oswald',sans-serif;font-size:14px;text-transform:capitalize;}
+  .cal-grid-head{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:10px;color:var(--muted);text-align:center;margin-bottom:4px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-cell{aspect-ratio:1;background:var(--surface2);border:1px solid transparent;border-radius:8px;color:var(--chalk);font-family:'JetBrains Mono',monospace;font-size:12px;cursor:default;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0;}
+  .cal-cell.empty{background:transparent;}
+  .cal-cell.today{border-color:var(--chalk);}
+  .cal-cell.selected{background:#2E3540;}
+  .cal-cell.has-entries{cursor:pointer;}
+  .cal-dots{display:flex;gap:2px;}
+  .cal-dot{width:5px;height:5px;border-radius:50%;display:block;}
+  .cal-legend{display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--muted);}
+  .cal-legend .item{display:flex;align-items:center;gap:4px;}
+
+  /* entries */
+  .entry-row{display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:8px;margin-bottom:8px;}
+  .entry-row:last-child{margin-bottom:0;}
+  .entry-thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;}
+  .entry-thumb.placeholder{background:#33393F;display:flex;align-items:center;justify-content:center;}
+  .entry-thumb.placeholder svg{width:18px;height:18px;color:var(--muted);}
+  .entry-info{flex:1;min-width:0;}
+  .entry-name{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;}
+  .entry-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:2px;}
+  .entry-del{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;display:flex;}
+  .entry-del svg{width:16px;height:16px;}
+  .empty-msg{color:var(--muted);font-size:13px;margin:0;}
+  .close-link{margin-top:10px;font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;}
+
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:flex-end;justify-content:center;z-index:50;}
+  .modal{background:var(--surface);border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .modal-head h3{font-family:'Oswald',sans-serif;font-size:16px;margin:0;text-transform:uppercase;letter-spacing:1px;}
+  .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;display:flex;}
+  .modal-close svg{width:20px;height:20px;}
+  label.field{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:10px 0 4px;}
+  input[type=date],input[type=time],input[type=number],input[type=text]{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--chalk);font-family:'Inter',sans-serif;font-size:14px;box-sizing:border-box;}
+  .row2{display:flex;gap:8px;}
+  .row2 > div{flex:1;}
+  .person-toggle{display:flex;gap:8px;margin-bottom:12px;}
+  .person-btn{flex:1;padding:10px 0;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--chalk);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;}
+  .person-btn.active-a{border-color:var(--accentA);background:rgba(255,107,74,0.12);}
+  .person-btn.active-b{border-color:var(--accentB);background:rgba(79,209,197,0.12);}
+  .upload-btn{width:100%;padding:12px 0;border-radius:10px;border:1px dashed #3A4148;background:var(--surface2);color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-size:13px;}
+  .upload-btn svg{width:16px;height:16px;}
+  .preview-img{width:100%;max-height:140px;object-fit:cover;border-radius:10px;margin-top:8px;display:block;}
+  .submit-btn{width:100%;margin-top:18px;padding:14px 0;background:var(--chalk);color:var(--bg);border:none;border-radius:12px;font-family:'Oswald',sans-serif;font-weight:600;font-size:15px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+  .hint{font-size:11px;color:var(--muted);margin-top:10px;}
+  .error-banner{background:#3A2020;color:#FFB4A0;padding:8px 16px;font-size:13px;margin:0 16px;border-radius:8px;}
+  .sync-banner{background:#1E2A26;color:#9CD9C7;padding:6px 16px;font-size:11px;margin:8px 16px 0;border-radius:8px;font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+<div id="error"></div>
+<div class="header">
+  <div class="header-row">
+    <div>
+      <div class="eyebrow">Reto del gimnasio</div>
+      <div class="title" id="titleNames"></div>
+    </div>
+    <button class="gear" id="btnSettings" aria-label="Configuración">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
+  <div class="scoreboards">
+    <div class="scorecard"><div class="val" id="daysLeft">00</div><div class="lab" id="daysLeftLabel">días restantes</div></div>
+    <div class="scorecard"><div class="val" id="weeksLeft">00</div><div class="lab">semanas restantes</div></div>
+  </div>
+  <div class="meta" id="meta"></div>
+</div>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="statcard">
+      <div class="dotrow"><span class="dot" style="background:var(--accentA)"></span><span class="statname" id="nameAlabel"></span></div>
+      <div class="statcount"><span id="countA">0</span> <span>asistencias</span></div>
+    </div>
+    <div class="statcard">
+      <div class="dotrow"><span class="dot" style="background:var(--accentB)"></span><span class="statname" id="nameBlabel"></span></div>
+      <div class="statcount"><span id="countB">0</span> <span>asistencias</span></div>
+    </div>
+  </div>
+
+  <button class="logbtn" id="btnLog">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5h11M6.5 17.5h11M4 9.5h2v5H4zM18 9.5h2v5h-2zM7 4v16M17 4v16"/></svg>
+    Registrar entrenamiento
+  </button>
+
+  <div class="section">
+    <div class="section-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/></svg>
+      <h3>Asistencias por semana</h3>
+    </div>
+    <div class="panel">
+      <div class="chart" id="chart"></div>
+      <div class="chart-legend">
+        <div class="item"><span class="dot" style="width:6px;height:6px;background:var(--accentA)"></span><span id="legendA"></span></div>
+        <div class="item"><span class="dot" style="width:6px;height:6px;background:var(--accentB)"></span><span id="legendB"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      <h3>Calendario de entrenamientos</h3>
+    </div>
+    <div class="panel">
+      <div class="cal-nav">
+        <button class="navbtn" id="calPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="cal-month" id="calMonth"></div>
+        <button class="navbtn" id="calNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+      </div>
+      <div class="cal-grid-head"><div>L</div><div>M</div><div>X</div><div>J</div><div>V</div><div>S</div><div>D</div></div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend">
+        <div class="item"><span class="dot" style="width:6px;height:6px;background:var(--accentA)"></span><span id="calLegendA"></span></div>
+        <div class="item"><span class="dot" style="width:6px;height:6px;background:var(--accentB)"></span><span id="calLegendB"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="entriesSection">
+    <div class="section-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <h3 id="entriesTitle">Últimos registros</h3>
+    </div>
+    <div class="panel" id="entriesPanel"></div>
+  </div>
+</div>
+
+<!-- Log modal -->
+<div class="overlay" id="logOverlay" style="display:none">
+  <div class="modal">
+    <div class="modal-head"><h3>Nuevo entrenamiento</h3><button class="modal-close" id="closeLog">&times;</button></div>
+    <div class="person-toggle" id="personToggle"></div>
+    <div class="row2">
+      <div><label class="field">Fecha</label><input type="date" id="inpDate"></div>
+      <div><label class="field">Hora</label><input type="time" id="inpTime"></div>
+    </div>
+    <label class="field">Duración (minutos)</label>
+    <input type="number" min="1" id="inpDuration" value="45">
+    <label class="field">Foto del entrenamiento</label>
+    <input type="file" accept="image/*" id="inpPhoto" style="display:none">
+    <button class="upload-btn" id="btnPhoto">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <span id="photoBtnLabel">Subir foto</span>
+    </button>
+    <img id="photoPreview" class="preview-img" style="display:none">
+    <button class="submit-btn" id="btnSaveEntry">Guardar registro</button>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="overlay" id="settingsOverlay" style="display:none">
+  <div class="modal">
+    <div class="modal-head"><h3>Configurar reto</h3><button class="modal-close" id="closeSettings">&times;</button></div>
+    <label class="field">Nombre Persona A</label>
+    <input type="text" id="cfgNameA">
+    <label class="field">Nombre Persona B</label>
+    <input type="text" id="cfgNameB">
+    <div class="row2">
+      <div><label class="field">Fecha de inicio</label><input type="date" id="cfgStart"></div>
+      <div><label class="field">Fecha de fin</label><input type="date" id="cfgEnd"></div>
+    </div>
+    <button class="submit-btn" id="btnSaveConfig">Guardar</button>
+    <p class="hint" id="syncHint"></p>
+  </div>
+</div>
+
+<!--
+  ============================================================
+  SINCRONIZACIÓN COMPARTIDA (OPCIONAL, recomendado)
+  ============================================================
+  Por defecto esta app guarda los datos en el almacenamiento
+  local del navegador (localStorage), es decir, solo en el
+  dispositivo donde se usa. Para que ambas personas vean los
+  mismos datos desde cualquier dispositivo:
+
+  1. Crea un proyecto gratuito en https://firebase.google.com
+  2. Activa "Firestore Database" (modo de prueba está bien para
+     un proyecto personal entre dos personas).
+  3. Copia tu configuración de Firebase y pégala abajo en
+     FIREBASE_CONFIG (reemplaza el objeto vacío {}).
+  4. Sube este archivo a un repositorio de GitHub y activa
+     GitHub Pages (Settings > Pages > Deploy from branch).
+
+  Si FIREBASE_CONFIG queda vacío, la app funciona igual pero
+  cada persona verá solo sus propios datos guardados en su navegador.
+  ============================================================
+-->
+<script type="module">
+const FIREBASE_CONFIG = {
+  // apiKey: "...",
+  // authDomain: "...",
+  // projectId: "...",
+  // storageBucket: "...",
+  // messagingSenderId: "...",
+  // appId: "..."
+};
+
+const ACCENT_A = "#FF6B4A";
+const ACCENT_B = "#4FD1C5";
+
+const DEFAULT_CONFIG = {
+  nameA: "Persona A",
+  nameB: "Persona B",
+  startDate: todayISO(),
+  endDate: addMonths(todayISO(), 3),
+};
+
+let config = { ...DEFAULT_CONFIG };
+let entries = [];
+let viewMonth = startOfMonth(new Date());
+let selectedDay = null;
+let selectedPerson = "A";
+let pendingPhoto = null;
+let db = null;
+let useFirestore = false;
+
+// ---------- date helpers ----------
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function addMonths(iso, n){ const d=new Date(iso+"T00:00:00"); d.setMonth(d.getMonth()+n); return d.toISOString().slice(0,10); }
+function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function daysBetween(a,b){ return Math.round((new Date(b+"T00:00:00") - new Date(a+"T00:00:00"))/86400000); }
+function fmtDate(iso){ return new Date(iso+"T00:00:00").toLocaleDateString("es-ES",{day:"2-digit",month:"short"}); }
+function uid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
+
+// ---------- storage ----------
+async function initStorage(){
+  if (FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey) {
+    try {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+      const { getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc, onSnapshot, collection as col2 } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+      const app = initializeApp(FIREBASE_CONFIG);
+      db = getFirestore(app);
+      window._fb = { doc, getDoc, setDoc, getDocs, deleteDoc, onSnapshot, collection };
+      useFirestore = true;
+    } catch(e){
+      showError("No se pudo conectar a Firebase. Usando almacenamiento local.");
+      useFirestore = false;
+    }
+  }
+
+  if (useFirestore) {
+    const { doc, getDoc, onSnapshot, collection } = window._fb;
+    const cfgRef = doc(db, "challenge", "config");
+    const cfgSnap = await getDoc(cfgRef);
+    if (cfgSnap.exists()) config = { ...DEFAULT_CONFIG, ...cfgSnap.data() };
+    else config = { ...DEFAULT_CONFIG };
+
+    onSnapshot(cfgRef, (snap) => {
+      if (snap.exists()) { config = { ...DEFAULT_CONFIG, ...snap.data() }; renderAll(); }
+    });
+
+    const colRef = collection(db, "checkins");
+    onSnapshot(colRef, (snap) => {
+      entries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderAll();
+    });
+
+    document.getElementById("syncHint").textContent = "Sincronización compartida activada (Firebase). Ambos verán los mismos datos.";
+  } else {
+    const c = localStorage.getItem("reto_config");
+    const e = localStorage.getItem("reto_entries");
+    if (c) config = { ...DEFAULT_CONFIG, ...JSON.parse(c) };
+    if (e) entries = JSON.parse(e);
+    document.getElementById("syncHint").textContent = "Modo local: los datos se guardan solo en este navegador. Configura Firebase en el código para compartirlos.";
+  }
+}
+
+async function saveConfig(newConfig){
+  config = newConfig;
+  if (useFirestore) {
+    const { doc, setDoc } = window._fb;
+    await setDoc(doc(db, "challenge", "config"), config);
+  } else {
+    localStorage.setItem("reto_config", JSON.stringify(config));
+    renderAll();
+  }
+}
+
+async function addEntry(entry){
+  if (useFirestore) {
+    const { doc, setDoc, collection } = window._fb;
+    const ref = doc(collection(db, "checkins"));
+    await setDoc(ref, entry);
+  } else {
+    entries.push({ id: uid(), ...entry });
+    localStorage.setItem("reto_entries", JSON.stringify(entries));
+    renderAll();
+  }
+}
+
+async function deleteEntry(id){
+  if (useFirestore) {
+    const { doc, deleteDoc } = window._fb;
+    await deleteDoc(doc(db, "checkins", id));
+  } else {
+    entries = entries.filter(e => e.id !== id);
+    localStorage.setItem("reto_entries", JSON.stringify(entries));
+    renderAll();
+  }
+}
+
+function showError(msg){
+  document.getElementById("error").innerHTML = `<div class="error-banner">${msg}</div>`;
+}
+
+// ---------- image compression ----------
+function compressImage(file, maxSize=240, quality=0.6){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > height) { if (width > maxSize) { height *= maxSize/width; width = maxSize; } }
+        else { if (height > maxSize) { width *= maxSize/height; height = maxSize; } }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ---------- render ----------
+function renderAll(){
+  renderHeader();
+  renderStats();
+  renderChart();
+  renderCalendar();
+  renderEntries();
+}
+
+function renderHeader(){
+  document.getElementById("titleNames").innerHTML =
+    `${config.nameA||"Persona A"} <span class="vs">vs</span> ${config.nameB||"Persona B"}`;
+
+  const totalDays = daysBetween(config.startDate, config.endDate);
+  const daysLeft = Math.max(0, daysBetween(todayISO(), config.endDate));
+  const weeksLeft = Math.max(0, Math.ceil(daysLeft/7));
+  const ended = todayISO() > config.endDate;
+  const started = todayISO() >= config.startDate;
+
+  document.getElementById("daysLeft").textContent = String(ended?0:daysLeft).padStart(2,"0");
+  document.getElementById("weeksLeft").textContent = String(ended?0:weeksLeft).padStart(2,"0");
+  document.getElementById("daysLeftLabel").textContent = ended ? "reto finalizado" : "días restantes";
+
+  let meta = `${config.startDate} → ${config.endDate} · ${totalDays+1} días en total`;
+  if (!started) meta += ` <span class="notstarted">· el reto aún no ha comenzado</span>`;
+  document.getElementById("meta").innerHTML = meta;
+}
+
+function renderStats(){
+  document.getElementById("nameAlabel").textContent = config.nameA||"Persona A";
+  document.getElementById("nameBlabel").textContent = config.nameB||"Persona B";
+  document.getElementById("legendA").textContent = config.nameA||"Persona A";
+  document.getElementById("legendB").textContent = config.nameB||"Persona B";
+  document.getElementById("calLegendA").textContent = config.nameA||"Persona A";
+  document.getElementById("calLegendB").textContent = config.nameB||"Persona B";
+  document.getElementById("countA").textContent = entries.filter(e=>e.person==="A").length;
+  document.getElementById("countB").textContent = entries.filter(e=>e.person==="B").length;
+}
+
+function renderChart(){
+  const chart = document.getElementById("chart");
+  const totalWeeks = Math.max(1, Math.ceil((daysBetween(config.startDate, config.endDate)+1)/7));
+  const start = new Date(config.startDate+"T00:00:00");
+  let maxVal = 3;
+  const weeks = [];
+  for (let w=0; w<totalWeeks; w++){
+    const wStart = new Date(start); wStart.setDate(wStart.getDate()+w*7);
+    const wEnd = new Date(wStart); wEnd.setDate(wEnd.getDate()+6);
+    const ws = wStart.toISOString().slice(0,10), we = wEnd.toISOString().slice(0,10);
+    const a = entries.filter(e=>e.person==="A" && e.date>=ws && e.date<=we).length;
+    const b = entries.filter(e=>e.person==="B" && e.date>=ws && e.date<=we).length;
+    maxVal = Math.max(maxVal, a, b);
+    weeks.push({ a, b });
+  }
+  const scaleMax = maxVal + 1;
+  const targetPct = (3/scaleMax)*100;
+
+  chart.innerHTML = `<div class="target-line" style="bottom:${targetPct}%">Meta: 3</div>` +
+    weeks.map((wk,i)=>`
+      <div class="week-group">
+        <div class="bars">
+          <div class="bar a" style="height:${(wk.a/scaleMax)*160}px" title="${wk.a}"></div>
+          <div class="bar b" style="height:${(wk.b/scaleMax)*160}px" title="${wk.b}"></div>
+        </div>
+        <div class="week-label">S${i+1}</div>
+      </div>
+    `).join("");
+}
+
+function renderCalendar(){
+  const year = viewMonth.getFullYear(), month = viewMonth.getMonth();
+  document.getElementById("calMonth").textContent = viewMonth.toLocaleDateString("es-ES",{month:"long",year:"numeric"});
+  const firstDay = new Date(year, month, 1);
+  const startOffset = (firstDay.getDay()+6)%7;
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const grid = document.getElementById("calGrid");
+  let html = "";
+  for (let i=0;i<startOffset;i++) html += `<div class="cal-cell empty"></div>`;
+  for (let d=1; d<=daysInMonth; d++){
+    const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const dayEntries = entries.filter(e=>e.date===dateStr);
+    const hasA = dayEntries.some(e=>e.person==="A");
+    const hasB = dayEntries.some(e=>e.person==="B");
+    const isToday = dateStr === todayISO();
+    const isSelected = dateStr === selectedDay;
+    let cls = "cal-cell";
+    if (isToday) cls += " today";
+    if (isSelected) cls += " selected";
+    if (dayEntries.length) cls += " has-entries";
+    html += `<button class="${cls}" data-date="${dateStr}" data-has="${dayEntries.length?1:0}">
+      <span>${d}</span>
+      <span class="cal-dots">
+        ${hasA?'<span class="cal-dot" style="background:var(--accentA)"></span>':''}
+        ${hasB?'<span class="cal-dot" style="background:var(--accentB)"></span>':''}
+      </span>
+    </button>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll(".cal-cell.has-entries").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const date = btn.dataset.date;
+      selectedDay = (selectedDay === date) ? null : date;
+      renderCalendar();
+      renderEntries();
+    });
+  });
+}
+
+function entryRowHtml(e){
+  const color = e.person==="A" ? ACCENT_A : ACCENT_B;
+  const name = e.person==="A" ? (config.nameA||"Persona A") : (config.nameB||"Persona B");
+  const thumb = e.photo
+    ? `<img class="entry-thumb" src="${e.photo}">`
+    : `<div class="entry-thumb placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5h11M6.5 17.5h11M4 9.5h2v5H4zM18 9.5h2v5h-2zM7 4v16M17 4v16"/></svg></div>`;
+  return `<div class="entry-row">
+    ${thumb}
+    <div class="entry-info">
+      <div class="entry-name"><span class="dot" style="width:8px;height:8px;background:${color}"></span>${name}</div>
+      <div class="entry-sub">${fmtDate(e.date)} · ${e.time} · ${e.duration} min</div>
+    </div>
+    <button class="entry-del" data-id="${e.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  </div>`;
+}
+
+function renderEntries(){
+  const panel = document.getElementById("entriesPanel");
+  const title = document.getElementById("entriesTitle");
+  let html = "";
+  let list;
+  if (selectedDay){
+    title.textContent = `Entrenamientos del ${fmtDate(selectedDay)}`;
+    list = entries.filter(e=>e.date===selectedDay);
+    html = list.map(entryRowHtml).join("");
+    html += `<button class="close-link" id="closeDayDetail">Cerrar</button>`;
+  } else {
+    title.textContent = "Últimos registros";
+    list = [...entries].sort((a,b)=> (a.date+a.time < b.date+b.time) ? 1 : -1).slice(0,6);
+    if (list.length===0){
+      html = `<p class="empty-msg">Aún no hay entrenamientos registrados. Toca "Registrar entrenamiento" para añadir el primero.</p>`;
+    } else {
+      html = list.map(entryRowHtml).join("");
+    }
+  }
+  panel.innerHTML = html;
+  panel.querySelectorAll(".entry-del").forEach(btn=>{
+    btn.addEventListener("click", ()=> deleteEntry(btn.dataset.id));
+  });
+  const closeBtn = document.getElementById("closeDayDetail");
+  if (closeBtn) closeBtn.addEventListener("click", ()=>{ selectedDay=null; renderCalendar(); renderEntries(); });
+}
+
+// ---------- modals ----------
+function renderPersonToggle(){
+  const el = document.getElementById("personToggle");
+  el.innerHTML = `
+    <button class="person-btn ${selectedPerson==='A'?'active-a':''}" data-p="A">${config.nameA||"Persona A"}</button>
+    <button class="person-btn ${selectedPerson==='B'?'active-b':''}" data-p="B">${config.nameB||"Persona B"}</button>
+  `;
+  el.querySelectorAll(".person-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ selectedPerson = btn.dataset.p; renderPersonToggle(); });
+  });
+}
+
+function openLogModal(){
+  selectedPerson = "A";
+  pendingPhoto = null;
+  document.getElementById("inpDate").value = todayISO();
+  const now = new Date();
+  document.getElementById("inpTime").value = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+  document.getElementById("inpDuration").value = 45;
+  document.getElementById("photoPreview").style.display = "none";
+  document.getElementById("photoPreview").src = "";
+  document.getElementById("photoBtnLabel").textContent = "Subir foto";
+  document.getElementById("inpPhoto").value = "";
+  renderPersonToggle();
+  document.getElementById("logOverlay").style.display = "flex";
+}
+
+function openSettingsModal(){
+  document.getElementById("cfgNameA").value = config.nameA||"";
+  document.getElementById("cfgNameB").value = config.nameB||"";
+  document.getElementById("cfgStart").value = config.startDate;
+  document.getElementById("cfgEnd").value = config.endDate;
+  document.getElementById("settingsOverlay").style.display = "flex";
+}
+
+// ---------- events ----------
+document.getElementById("btnLog").addEventListener("click", openLogModal);
+document.getElementById("closeLog").addEventListener("click", ()=> document.getElementById("logOverlay").style.display="none");
+document.getElementById("btnSettings").addEventListener("click", openSettingsModal);
+document.getElementById("closeSettings").addEventListener("click", ()=> document.getElementById("settingsOverlay").style.display="none");
+
+document.getElementById("btnPhoto").addEventListener("click", ()=> document.getElementById("inpPhoto").click());
+document.getElementById("inpPhoto").addEventListener("change", async (e)=>{
+  const file = e.target.files?.[0];
+  if (!file) return;
+  document.getElementById("photoBtnLabel").textContent = "Procesando...";
+  try{
+    pendingPhoto = await compressImage(file);
+    const preview = document.getElementById("photoPreview");
+    preview.src = pendingPhoto;
+    preview.style.display = "block";
+    document.getElementById("photoBtnLabel").textContent = "Cambiar foto";
+  } catch(err){
+    document.getElementById("photoBtnLabel").textContent = "Subir foto";
+  }
+});
+
+document.getElementById("btnSaveEntry").addEventListener("click", async ()=>{
+  const entry = {
+    person: selectedPerson,
+    date: document.getElementById("inpDate").value,
+    time: document.getElementById("inpTime").value,
+    duration: Number(document.getElementById("inpDuration").value),
+    photo: pendingPhoto,
+  };
+  await addEntry(entry);
+  document.getElementById("logOverlay").style.display = "none";
+});
+
+document.getElementById("btnSaveConfig").addEventListener("click", async ()=>{
+  const newConfig = {
+    nameA: document.getElementById("cfgNameA").value || "Persona A",
+    nameB: document.getElementById("cfgNameB").value || "Persona B",
+    startDate: document.getElementById("cfgStart").value,
+    endDate: document.getElementById("cfgEnd").value,
+  };
+  await saveConfig(newConfig);
+  document.getElementById("settingsOverlay").style.display = "none";
+});
+
+document.getElementById("calPrev").addEventListener("click", ()=>{
+  viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth()-1, 1);
+  renderCalendar();
+});
+document.getElementById("calNext").addEventListener("click", ()=>{
+  viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+1, 1);
+  renderCalendar();
+});
+
+// ---------- init ----------
+initStorage().then(renderAll);
+</script>
+</body>
+</html>
