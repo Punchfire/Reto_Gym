@@ -1,640 +1,919 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Reto del Gimnasio</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reto Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  :root{
-    --bg:#13161A; --surface:#1D2227; --surface2:#262B31;
-    --chalk:#F2EFE9; --muted:#7B838C; --line:#2A2F35;
-    --accentA:#FF6B4A; --accentB:#4FD1C5;
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #2e2e2e;
+    --accent: #b8f03b;
+    --accent-dim: #8ab82c;
+    --text: #f0f0f0;
+    --text-muted: #888;
+    --p1: #b8f03b;
+    --p2: #38bdf8;
+    --danger: #f87171;
+    --radius: 12px;
+    --radius-sm: 8px;
   }
-  *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--chalk);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
-  .wrap{max-width:720px;margin:0 auto;padding:0 16px 32px;}
-  .header{border-bottom:1px solid var(--line);padding:20px 16px 16px;}
-  .header-row{display:flex;justify-content:space-between;align-items:flex-start;max-width:720px;margin:0 auto;}
-  .eyebrow{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
-  .title{font-family:'Oswald',sans-serif;font-size:22px;font-weight:600;margin-top:2px;}
-  .title .vs{color:var(--muted);font-weight:400;}
-  .gear{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;color:var(--muted);cursor:pointer;display:flex;}
-  .gear svg{width:18px;height:18px;}
-  .scoreboards{display:flex;gap:12px;max-width:720px;margin:16px auto 0;}
-  .scorecard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 16px;flex:1;text-align:center;}
-  .scorecard .val{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;line-height:1;letter-spacing:-1px;}
-  .scorecard .lab{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:1px;}
-  .meta{max-width:720px;margin:10px auto 0;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
-  .meta .notstarted{color:var(--accentB);}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+  h1, h2, h3, .num {
+    font-family: 'Space Grotesk', sans-serif;
+  }
 
-  .stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
-  .statcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;}
-  .statcard .dotrow{display:flex;align-items:center;gap:8px;}
-  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
-  .statname{font-size:13px;color:var(--muted);font-weight:500;}
-  .statcount{font-family:'Oswald',sans-serif;font-size:32px;font-weight:700;margin-top:4px;}
-  .statcount span{font-size:13px;color:var(--muted);font-weight:400;text-transform:uppercase;}
+  /* ── HEADER ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+  .logo { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
+  .logo span { color: var(--accent); }
 
-  .logbtn{width:100%;margin-top:16px;padding:14px 0;background:var(--chalk);color:var(--bg);border:none;border-radius:12px;font-family:'Oswald',sans-serif;font-weight:600;font-size:16px;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;}
-  .logbtn svg{width:18px;height:18px;}
+  /* ── NAV TABS ── */
+  .tabs {
+    display: flex; gap: 4px;
+    padding: 1rem 1.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    padding: .5rem 1rem; border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    font-size: .85rem; font-weight: 500; cursor: pointer;
+    background: none; border: none; color: var(--text-muted);
+    border: 1px solid transparent; border-bottom: none;
+    transition: color .15s, background .15s;
+  }
+  .tab.active {
+    color: var(--accent); background: var(--surface);
+    border-color: var(--border);
+  }
+  .tab:hover:not(.active) { color: var(--text); }
 
-  .section{margin-top:24px;}
-  .section-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;color:var(--muted);}
-  .section-head svg{width:16px;height:16px;}
-  .section-head h3{font-family:'Oswald',sans-serif;font-size:14px;font-weight:500;letter-spacing:1px;text-transform:uppercase;margin:0;}
-  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;}
+  /* ── MAIN LAYOUT ── */
+  main { padding: 1.5rem; max-width: 900px; margin: 0 auto; }
+  .page { display: none; }
+  .page.active { display: block; }
 
-  /* chart */
-  .chart{display:flex;align-items:flex-end;gap:6px;height:180px;padding-top:20px;position:relative;border-bottom:1px solid var(--line);}
-  .chart .target-line{position:absolute;left:0;right:0;border-top:1px dashed var(--muted);font-size:10px;color:var(--muted);text-align:right;padding-right:2px;}
-  .week-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;}
-  .bars{display:flex;gap:2px;align-items:flex-end;height:160px;width:100%;justify-content:center;}
-  .bar{width:40%;border-radius:3px 3px 0 0;min-height:2px;}
-  .bar.a{background:var(--accentA);}
-  .bar.b{background:var(--accentB);}
-  .week-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);}
-  .chart-legend{display:flex;gap:16px;margin-top:10px;font-size:11px;color:var(--muted);}
-  .chart-legend .item{display:flex;align-items:center;gap:4px;}
+  /* ── STAT CARDS ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px; margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+  }
+  .stat-label { font-size: .75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .35rem; }
+  .stat-val { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; line-height: 1; }
+  .stat-sub { font-size: .75rem; color: var(--text-muted); margin-top: .25rem; }
 
-  /* calendar */
-  .cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-  .navbtn{background:var(--surface2);border:1px solid var(--line);border-radius:8px;color:var(--chalk);padding:6px;cursor:pointer;display:flex;}
-  .navbtn svg{width:16px;height:16px;}
-  .cal-month{font-family:'Oswald',sans-serif;font-size:14px;text-transform:capitalize;}
-  .cal-grid-head{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:10px;color:var(--muted);text-align:center;margin-bottom:4px;}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-  .cal-cell{aspect-ratio:1;background:var(--surface2);border:1px solid transparent;border-radius:8px;color:var(--chalk);font-family:'JetBrains Mono',monospace;font-size:12px;cursor:default;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0;}
-  .cal-cell.empty{background:transparent;}
-  .cal-cell.today{border-color:var(--chalk);}
-  .cal-cell.selected{background:#2E3540;}
-  .cal-cell.has-entries{cursor:pointer;}
-  .cal-dots{display:flex;gap:2px;}
-  .cal-dot{width:5px;height:5px;border-radius:50%;display:block;}
-  .cal-legend{display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--muted);}
-  .cal-legend .item{display:flex;align-items:center;gap:4px;}
+  /* ── COUNTDOWN RING ── */
+  .countdown-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    display: flex; align-items: center; gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .ring-container { position: relative; width: 110px; height: 110px; flex-shrink: 0; }
+  .ring-svg { width: 110px; height: 110px; transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--surface2); stroke-width: 8; }
+  .ring-progress { fill: none; stroke: var(--accent); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+  .ring-text {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .ring-days { font-size: 1.5rem; font-weight: 700; line-height: 1; color: var(--accent); }
+  .ring-label { font-size: .65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+  .countdown-info h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: .25rem; }
+  .countdown-info p { font-size: .85rem; color: var(--text-muted); margin-bottom: .5rem; }
+  .progress-bar-wrap { background: var(--surface2); border-radius: 99px; height: 6px; width: 200px; max-width: 100%; }
+  .progress-bar-fill { height: 6px; border-radius: 99px; background: var(--accent); transition: width 1s ease; }
 
-  /* entries */
-  .entry-row{display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:8px;margin-bottom:8px;}
-  .entry-row:last-child{margin-bottom:0;}
-  .entry-thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;}
-  .entry-thumb.placeholder{background:#33393F;display:flex;align-items:center;justify-content:center;}
-  .entry-thumb.placeholder svg{width:18px;height:18px;color:var(--muted);}
-  .entry-info{flex:1;min-width:0;}
-  .entry-name{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;}
-  .entry-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:2px;}
-  .entry-del{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;display:flex;}
-  .entry-del svg{width:16px;height:16px;}
-  .empty-msg{color:var(--muted);font-size:13px;margin:0;}
-  .close-link{margin-top:10px;font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;}
+  /* ── ASISTENCIA GRID ── */
+  .attendance-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 580px) { .attendance-grid { grid-template-columns: 1fr; } }
+  .person-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+  }
+  .person-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .person-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .85rem;
+  }
+  .p1 .person-avatar { background: rgba(184,240,59,.15); color: var(--p1); }
+  .p2 .person-avatar { background: rgba(56,189,248,.15); color: var(--p2); }
+  .person-name { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: .95rem; }
+  .person-count { font-size: .78rem; color: var(--text-muted); }
+  .streak-row { display: flex; gap: 4px; flex-wrap: wrap; }
+  .streak-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--surface2);
+  }
+  .p1 .streak-dot.done { background: var(--p1); }
+  .p2 .streak-dot.done { background: var(--p2); }
 
-  /* modal */
-  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:flex-end;justify-content:center;z-index:50;}
-  .modal{background:var(--surface);border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
-  .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
-  .modal-head h3{font-family:'Oswald',sans-serif;font-size:16px;margin:0;text-transform:uppercase;letter-spacing:1px;}
-  .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;display:flex;}
-  .modal-close svg{width:20px;height:20px;}
-  label.field{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:10px 0 4px;}
-  input[type=date],input[type=time],input[type=number],input[type=text]{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--chalk);font-family:'Inter',sans-serif;font-size:14px;box-sizing:border-box;}
-  .row2{display:flex;gap:8px;}
-  .row2 > div{flex:1;}
-  .person-toggle{display:flex;gap:8px;margin-bottom:12px;}
-  .person-btn{flex:1;padding:10px 0;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--chalk);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;}
-  .person-btn.active-a{border-color:var(--accentA);background:rgba(255,107,74,0.12);}
-  .person-btn.active-b{border-color:var(--accentB);background:rgba(79,209,197,0.12);}
-  .upload-btn{width:100%;padding:12px 0;border-radius:10px;border:1px dashed #3A4148;background:var(--surface2);color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-size:13px;}
-  .upload-btn svg{width:16px;height:16px;}
-  .preview-img{width:100%;max-height:140px;object-fit:cover;border-radius:10px;margin-top:8px;display:block;}
-  .submit-btn{width:100%;margin-top:18px;padding:14px 0;background:var(--chalk);color:var(--bg);border:none;border-radius:12px;font-family:'Oswald',sans-serif;font-weight:600;font-size:15px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
-  .hint{font-size:11px;color:var(--muted);margin-top:10px;}
-  .error-banner{background:#3A2020;color:#FFB4A0;padding:8px 16px;font-size:13px;margin:0 16px;border-radius:8px;}
-  .sync-banner{background:#1E2A26;color:#9CD9C7;padding:6px 16px;font-size:11px;margin:8px 16px 0;border-radius:8px;font-family:'JetBrains Mono',monospace;}
+  /* ── CALENDAR ── */
+  .calendar-section { margin-bottom: 1.5rem; }
+  .section-title { font-family: 'Space Grotesk', sans-serif; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); margin-bottom: .75rem; }
+  .cal-nav { display: flex; align-items: center; gap: 1rem; margin-bottom: .75rem; }
+  .cal-nav button { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: .3rem .7rem; border-radius: var(--radius-sm); cursor: pointer; font-size: .85rem; }
+  .cal-nav button:hover { border-color: var(--accent); color: var(--accent); }
+  .cal-month { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 1rem; }
+  .cal-grid {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .cal-weekdays {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .cal-wd { text-align: center; padding: .4rem; font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+  .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cal-day {
+    min-height: 52px; padding: .35rem; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    position: relative;
+  }
+  .cal-day:nth-child(7n) { border-right: none; }
+  .cal-day.other-month .day-num { color: #3a3a3a; }
+  .cal-day.today { background: rgba(184,240,59,.05); }
+  .day-num { font-size: .78rem; font-family: 'Space Grotesk', sans-serif; font-weight: 500; color: var(--text-muted); }
+  .cal-day.today .day-num { color: var(--accent); font-weight: 700; }
+  .day-dots { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; }
+  .day-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    cursor: pointer; transition: transform .1s;
+  }
+  .day-dot:hover { transform: scale(1.3); }
+  .day-dot.p1 { background: var(--p1); }
+  .day-dot.p2 { background: var(--p2); }
+
+  /* ── CHART ── */
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .chart-wrap { height: 220px; position: relative; }
+
+  /* ── UPLOAD FORM ── */
+  .upload-form {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem;
+    max-width: 500px;
+  }
+  .form-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 1.1rem; margin-bottom: 1.25rem; }
+  .form-group { margin-bottom: 1rem; }
+  label { display: block; font-size: .8rem; color: var(--text-muted); margin-bottom: .4rem; text-transform: uppercase; letter-spacing: .05em; }
+  input[type="date"], input[type="time"], input[type="number"], select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: .6rem .8rem; border-radius: var(--radius-sm);
+    font-size: .9rem; font-family: 'Inter', sans-serif;
+    outline: none; transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  .photo-drop {
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    padding: 2rem; text-align: center; cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+  }
+  .photo-drop:hover, .photo-drop.dragover { border-color: var(--accent); background: rgba(184,240,59,.04); }
+  .photo-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .photo-drop-icon { font-size: 1.8rem; margin-bottom: .5rem; }
+  .photo-drop p { font-size: .85rem; color: var(--text-muted); }
+  .photo-preview { width: 100%; max-height: 180px; object-fit: cover; border-radius: var(--radius-sm); margin-top: .75rem; display: none; }
+  .btn-submit {
+    width: 100%; padding: .75rem; background: var(--accent); color: #0f0f0f;
+    border: none; border-radius: var(--radius-sm); font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: .95rem; cursor: pointer; transition: opacity .15s;
+    margin-top: .5rem;
+  }
+  .btn-submit:hover { opacity: .85; }
+  .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── FEED ── */
+  .feed { display: flex; flex-direction: column; gap: 12px; }
+  .feed-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    display: flex; gap: 0;
+  }
+  .feed-accent { width: 4px; flex-shrink: 0; }
+  .feed-accent.p1 { background: var(--p1); }
+  .feed-accent.p2 { background: var(--p2); }
+  .feed-content { padding: .9rem 1rem; flex: 1; }
+  .feed-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .35rem; }
+  .feed-person { font-weight: 600; font-size: .9rem; font-family: 'Space Grotesk', sans-serif; }
+  .feed-person.p1c { color: var(--p1); }
+  .feed-person.p2c { color: var(--p2); }
+  .feed-date { font-size: .75rem; color: var(--text-muted); }
+  .feed-meta { font-size: .8rem; color: var(--text-muted); }
+  .feed-img { width: 80px; height: 80px; object-fit: cover; flex-shrink: 0; cursor: pointer; }
+  .feed-no-img { width: 80px; height: 80px; background: var(--surface2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--text-muted); font-size: 1.5rem; }
+
+  /* ── MODAL ── */
+  .modal-bg {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.85); z-index: 200;
+    align-items: center; justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal-img { max-width: 90vw; max-height: 85vh; border-radius: var(--radius); object-fit: contain; }
+  .modal-close { position: absolute; top: 1rem; right: 1rem; background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
+
+  /* ── CONFIG PAGE ── */
+  .config-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; max-width: 500px; }
+  .config-card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+  .config-note { background: rgba(184,240,59,.08); border: 1px solid rgba(184,240,59,.2); border-radius: var(--radius-sm); padding: .9rem 1rem; font-size: .82rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.6; }
+  .config-note code { background: var(--surface2); padding: .15rem .4rem; border-radius: 4px; font-family: monospace; font-size: .8rem; color: var(--accent); }
+  .btn-save { padding: .65rem 1.4rem; background: var(--accent); color: #0f0f0f; border: none; border-radius: var(--radius-sm); font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: .9rem; cursor: pointer; transition: opacity .15s; }
+  .btn-save:hover { opacity: .85; }
+  .config-status { font-size: .82rem; margin-top: .75rem; color: var(--text-muted); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: .65rem 1.2rem;
+    font-size: .85rem; font-weight: 500; z-index: 300;
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+  #toast.success { border-color: var(--accent); color: var(--accent); }
+  #toast.error { border-color: var(--danger); color: var(--danger); }
+
+  /* ── LEGEND ── */
+  .legend { display: flex; gap: 1rem; margin-bottom: .75rem; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--text-muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .ld-p1 { background: var(--p1); }
+  .ld-p2 { background: var(--p2); }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 3rem; color: var(--text-muted); font-size: .9rem; }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; margin-right: 8px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
-<div id="error"></div>
-<div class="header">
-  <div class="header-row">
-    <div>
-      <div class="eyebrow">Reto del gimnasio</div>
-      <div class="title" id="titleNames"></div>
-    </div>
-    <button class="gear" id="btnSettings" aria-label="Configuración">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    </button>
-  </div>
-  <div class="scoreboards">
-    <div class="scorecard"><div class="val" id="daysLeft">00</div><div class="lab" id="daysLeftLabel">días restantes</div></div>
-    <div class="scorecard"><div class="val" id="weeksLeft">00</div><div class="lab">semanas restantes</div></div>
-  </div>
-  <div class="meta" id="meta"></div>
+
+<header>
+  <div class="logo">Reto <span>Fitness</span></div>
+  <div style="font-size:.78rem; color:var(--text-muted)" id="connection-status">Conectando…</div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="showPage('dashboard')">Dashboard</button>
+  <button class="tab" onclick="showPage('calendar')">Calendario</button>
+  <button class="tab" onclick="showPage('upload')">Registrar</button>
+  <button class="tab" onclick="showPage('feed')">Historial</button>
+  <button class="tab" onclick="showPage('config')">Ajustes</button>
 </div>
 
-<div class="wrap">
-  <div class="stats">
-    <div class="statcard">
-      <div class="dotrow"><span class="dot" style="background:var(--accentA)"></span><span class="statname" id="nameAlabel"></span></div>
-      <div class="statcount"><span id="countA">0</span> <span>asistencias</span></div>
-    </div>
-    <div class="statcard">
-      <div class="dotrow"><span class="dot" style="background:var(--accentB)"></span><span class="statname" id="nameBlabel"></span></div>
-      <div class="statcount"><span id="countB">0</span> <span>asistencias</span></div>
-    </div>
-  </div>
+<main>
 
-  <button class="logbtn" id="btnLog">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5h11M6.5 17.5h11M4 9.5h2v5H4zM18 9.5h2v5h-2zM7 4v16M17 4v16"/></svg>
-    Registrar entrenamiento
-  </button>
-
-  <div class="section">
-    <div class="section-head">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/></svg>
-      <h3>Asistencias por semana</h3>
-    </div>
-    <div class="panel">
-      <div class="chart" id="chart"></div>
-      <div class="chart-legend">
-        <div class="item"><span class="dot" style="width:6px;height:6px;background:var(--accentA)"></span><span id="legendA"></span></div>
-        <div class="item"><span class="dot" style="width:6px;height:6px;background:var(--accentB)"></span><span id="legendB"></span></div>
+<!-- ═══ DASHBOARD ═══ -->
+<div id="page-dashboard" class="page active">
+  <div id="countdown-section" class="countdown-wrap">
+    <div class="ring-container">
+      <svg class="ring-svg" viewBox="0 0 110 110">
+        <circle class="ring-bg" cx="55" cy="55" r="46"/>
+        <circle class="ring-progress" id="ring-arc" cx="55" cy="55" r="46" stroke-dasharray="289" stroke-dashoffset="289"/>
+      </svg>
+      <div class="ring-text">
+        <span class="ring-days" id="days-left">–</span>
+        <span class="ring-label">días</span>
       </div>
     </div>
-  </div>
-
-  <div class="section">
-    <div class="section-head">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      <h3>Calendario de entrenamientos</h3>
-    </div>
-    <div class="panel">
-      <div class="cal-nav">
-        <button class="navbtn" id="calPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-        <div class="cal-month" id="calMonth"></div>
-        <button class="navbtn" id="calNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+    <div class="countdown-info">
+      <h2 id="reto-title">Cargando reto…</h2>
+      <p id="reto-dates">–</p>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
       </div>
-      <div class="cal-grid-head"><div>L</div><div>M</div><div>X</div><div>J</div><div>V</div><div>S</div><div>D</div></div>
-      <div class="cal-grid" id="calGrid"></div>
-      <div class="cal-legend">
-        <div class="item"><span class="dot" style="width:6px;height:6px;background:var(--accentA)"></span><span id="calLegendA"></span></div>
-        <div class="item"><span class="dot" style="width:6px;height:6px;background:var(--accentB)"></span><span id="calLegendB"></span></div>
-      </div>
+      <p style="font-size:.75rem;color:var(--text-muted);margin-top:.35rem" id="progress-pct">0% completado</p>
     </div>
   </div>
 
-  <div class="section" id="entriesSection">
-    <div class="section-head">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      <h3 id="entriesTitle">Últimos registros</h3>
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label" id="p1name-label">Persona 1</div>
+      <div class="stat-val p1c num" id="stat-p1">–</div>
+      <div class="stat-sub">entrenamientos</div>
     </div>
-    <div class="panel" id="entriesPanel"></div>
-  </div>
-</div>
-
-<!-- Log modal -->
-<div class="overlay" id="logOverlay" style="display:none">
-  <div class="modal">
-    <div class="modal-head"><h3>Nuevo entrenamiento</h3><button class="modal-close" id="closeLog">&times;</button></div>
-    <div class="person-toggle" id="personToggle"></div>
-    <div class="row2">
-      <div><label class="field">Fecha</label><input type="date" id="inpDate"></div>
-      <div><label class="field">Hora</label><input type="time" id="inpTime"></div>
+    <div class="stat-card">
+      <div class="stat-label" id="p2name-label">Persona 2</div>
+      <div class="stat-val" style="color:var(--p2)" id="stat-p2">–</div>
+      <div class="stat-sub">entrenamientos</div>
     </div>
-    <label class="field">Duración (minutos)</label>
-    <input type="number" min="1" id="inpDuration" value="45">
-    <label class="field">Foto del entrenamiento</label>
-    <input type="file" accept="image/*" id="inpPhoto" style="display:none">
-    <button class="upload-btn" id="btnPhoto">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-      <span id="photoBtnLabel">Subir foto</span>
-    </button>
-    <img id="photoPreview" class="preview-img" style="display:none">
-    <button class="submit-btn" id="btnSaveEntry">Guardar registro</button>
-  </div>
-</div>
-
-<!-- Settings modal -->
-<div class="overlay" id="settingsOverlay" style="display:none">
-  <div class="modal">
-    <div class="modal-head"><h3>Configurar reto</h3><button class="modal-close" id="closeSettings">&times;</button></div>
-    <label class="field">Nombre Persona A</label>
-    <input type="text" id="cfgNameA">
-    <label class="field">Nombre Persona B</label>
-    <input type="text" id="cfgNameB">
-    <div class="row2">
-      <div><label class="field">Fecha de inicio</label><input type="date" id="cfgStart"></div>
-      <div><label class="field">Fecha de fin</label><input type="date" id="cfgEnd"></div>
+    <div class="stat-card">
+      <div class="stat-label">Total sesiones</div>
+      <div class="stat-val num" id="stat-total">–</div>
+      <div class="stat-sub">ambos</div>
     </div>
-    <button class="submit-btn" id="btnSaveConfig">Guardar</button>
-    <p class="hint" id="syncHint"></p>
+    <div class="stat-card">
+      <div class="stat-label">Última sesión</div>
+      <div class="stat-val num" style="font-size:1.2rem;" id="stat-last">–</div>
+      <div class="stat-sub" id="stat-last-who">–</div>
+    </div>
   </div>
-</div>
 
-<!--
-  ============================================================
-  SINCRONIZACIÓN COMPARTIDA (OPCIONAL, recomendado)
-  ============================================================
-  Por defecto esta app guarda los datos en el almacenamiento
-  local del navegador (localStorage), es decir, solo en el
-  dispositivo donde se usa. Para que ambas personas vean los
-  mismos datos desde cualquier dispositivo:
-
-  1. Crea un proyecto gratuito en https://firebase.google.com
-  2. Activa "Firestore Database" (modo de prueba está bien para
-     un proyecto personal entre dos personas).
-  3. Copia tu configuración de Firebase y pégala abajo en
-     FIREBASE_CONFIG (reemplaza el objeto vacío {}).
-  4. Sube este archivo a un repositorio de GitHub y activa
-     GitHub Pages (Settings > Pages > Deploy from branch).
-
-  Si FIREBASE_CONFIG queda vacío, la app funciona igual pero
-  cada persona verá solo sus propios datos guardados en su navegador.
-  ============================================================
--->
-<script type="module">
-const FIREBASE_CONFIG = {
-  // apiKey: "...",
-  // authDomain: "...",
-  // projectId: "...",
-  // storageBucket: "...",
-  // messagingSenderId: "...",
-  // appId: "..."
-};
-
-const ACCENT_A = "#FF6B4A";
-const ACCENT_B = "#4FD1C5";
-
-const DEFAULT_CONFIG = {
-  nameA: "Persona A",
-  nameB: "Persona B",
-  startDate: todayISO(),
-  endDate: addMonths(todayISO(), 3),
-};
-
-let config = { ...DEFAULT_CONFIG };
-let entries = [];
-let viewMonth = startOfMonth(new Date());
-let selectedDay = null;
-let selectedPerson = "A";
-let pendingPhoto = null;
-let db = null;
-let useFirestore = false;
-
-// ---------- date helpers ----------
-function todayISO(){ return new Date().toISOString().slice(0,10); }
-function addMonths(iso, n){ const d=new Date(iso+"T00:00:00"); d.setMonth(d.getMonth()+n); return d.toISOString().slice(0,10); }
-function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
-function daysBetween(a,b){ return Math.round((new Date(b+"T00:00:00") - new Date(a+"T00:00:00"))/86400000); }
-function fmtDate(iso){ return new Date(iso+"T00:00:00").toLocaleDateString("es-ES",{day:"2-digit",month:"short"}); }
-function uid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
-
-// ---------- storage ----------
-async function initStorage(){
-  if (FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey) {
-    try {
-      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
-      const { getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc, onSnapshot, collection as col2 } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-      const app = initializeApp(FIREBASE_CONFIG);
-      db = getFirestore(app);
-      window._fb = { doc, getDoc, setDoc, getDocs, deleteDoc, onSnapshot, collection };
-      useFirestore = true;
-    } catch(e){
-      showError("No se pudo conectar a Firebase. Usando almacenamiento local.");
-      useFirestore = false;
-    }
-  }
-
-  if (useFirestore) {
-    const { doc, getDoc, onSnapshot, collection } = window._fb;
-    const cfgRef = doc(db, "challenge", "config");
-    const cfgSnap = await getDoc(cfgRef);
-    if (cfgSnap.exists()) config = { ...DEFAULT_CONFIG, ...cfgSnap.data() };
-    else config = { ...DEFAULT_CONFIG };
-
-    onSnapshot(cfgRef, (snap) => {
-      if (snap.exists()) { config = { ...DEFAULT_CONFIG, ...snap.data() }; renderAll(); }
-    });
-
-    const colRef = collection(db, "checkins");
-    onSnapshot(colRef, (snap) => {
-      entries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderAll();
-    });
-
-    document.getElementById("syncHint").textContent = "Sincronización compartida activada (Firebase). Ambos verán los mismos datos.";
-  } else {
-    const c = localStorage.getItem("reto_config");
-    const e = localStorage.getItem("reto_entries");
-    if (c) config = { ...DEFAULT_CONFIG, ...JSON.parse(c) };
-    if (e) entries = JSON.parse(e);
-    document.getElementById("syncHint").textContent = "Modo local: los datos se guardan solo en este navegador. Configura Firebase en el código para compartirlos.";
-  }
-}
-
-async function saveConfig(newConfig){
-  config = newConfig;
-  if (useFirestore) {
-    const { doc, setDoc } = window._fb;
-    await setDoc(doc(db, "challenge", "config"), config);
-  } else {
-    localStorage.setItem("reto_config", JSON.stringify(config));
-    renderAll();
-  }
-}
-
-async function addEntry(entry){
-  if (useFirestore) {
-    const { doc, setDoc, collection } = window._fb;
-    const ref = doc(collection(db, "checkins"));
-    await setDoc(ref, entry);
-  } else {
-    entries.push({ id: uid(), ...entry });
-    localStorage.setItem("reto_entries", JSON.stringify(entries));
-    renderAll();
-  }
-}
-
-async function deleteEntry(id){
-  if (useFirestore) {
-    const { doc, deleteDoc } = window._fb;
-    await deleteDoc(doc(db, "checkins", id));
-  } else {
-    entries = entries.filter(e => e.id !== id);
-    localStorage.setItem("reto_entries", JSON.stringify(entries));
-    renderAll();
-  }
-}
-
-function showError(msg){
-  document.getElementById("error").innerHTML = `<div class="error-banner">${msg}</div>`;
-}
-
-// ---------- image compression ----------
-function compressImage(file, maxSize=240, quality=0.6){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > height) { if (width > maxSize) { height *= maxSize/width; width = maxSize; } }
-        else { if (height > maxSize) { width *= maxSize/height; height = maxSize; } }
-        const canvas = document.createElement("canvas");
-        canvas.width = width; canvas.height = height;
-        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.onerror = reject;
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-// ---------- render ----------
-function renderAll(){
-  renderHeader();
-  renderStats();
-  renderChart();
-  renderCalendar();
-  renderEntries();
-}
-
-function renderHeader(){
-  document.getElementById("titleNames").innerHTML =
-    `${config.nameA||"Persona A"} <span class="vs">vs</span> ${config.nameB||"Persona B"}`;
-
-  const totalDays = daysBetween(config.startDate, config.endDate);
-  const daysLeft = Math.max(0, daysBetween(todayISO(), config.endDate));
-  const weeksLeft = Math.max(0, Math.ceil(daysLeft/7));
-  const ended = todayISO() > config.endDate;
-  const started = todayISO() >= config.startDate;
-
-  document.getElementById("daysLeft").textContent = String(ended?0:daysLeft).padStart(2,"0");
-  document.getElementById("weeksLeft").textContent = String(ended?0:weeksLeft).padStart(2,"0");
-  document.getElementById("daysLeftLabel").textContent = ended ? "reto finalizado" : "días restantes";
-
-  let meta = `${config.startDate} → ${config.endDate} · ${totalDays+1} días en total`;
-  if (!started) meta += ` <span class="notstarted">· el reto aún no ha comenzado</span>`;
-  document.getElementById("meta").innerHTML = meta;
-}
-
-function renderStats(){
-  document.getElementById("nameAlabel").textContent = config.nameA||"Persona A";
-  document.getElementById("nameBlabel").textContent = config.nameB||"Persona B";
-  document.getElementById("legendA").textContent = config.nameA||"Persona A";
-  document.getElementById("legendB").textContent = config.nameB||"Persona B";
-  document.getElementById("calLegendA").textContent = config.nameA||"Persona A";
-  document.getElementById("calLegendB").textContent = config.nameB||"Persona B";
-  document.getElementById("countA").textContent = entries.filter(e=>e.person==="A").length;
-  document.getElementById("countB").textContent = entries.filter(e=>e.person==="B").length;
-}
-
-function renderChart(){
-  const chart = document.getElementById("chart");
-  const totalWeeks = Math.max(1, Math.ceil((daysBetween(config.startDate, config.endDate)+1)/7));
-  const start = new Date(config.startDate+"T00:00:00");
-  let maxVal = 3;
-  const weeks = [];
-  for (let w=0; w<totalWeeks; w++){
-    const wStart = new Date(start); wStart.setDate(wStart.getDate()+w*7);
-    const wEnd = new Date(wStart); wEnd.setDate(wEnd.getDate()+6);
-    const ws = wStart.toISOString().slice(0,10), we = wEnd.toISOString().slice(0,10);
-    const a = entries.filter(e=>e.person==="A" && e.date>=ws && e.date<=we).length;
-    const b = entries.filter(e=>e.person==="B" && e.date>=ws && e.date<=we).length;
-    maxVal = Math.max(maxVal, a, b);
-    weeks.push({ a, b });
-  }
-  const scaleMax = maxVal + 1;
-  const targetPct = (3/scaleMax)*100;
-
-  chart.innerHTML = `<div class="target-line" style="bottom:${targetPct}%">Meta: 3</div>` +
-    weeks.map((wk,i)=>`
-      <div class="week-group">
-        <div class="bars">
-          <div class="bar a" style="height:${(wk.a/scaleMax)*160}px" title="${wk.a}"></div>
-          <div class="bar b" style="height:${(wk.b/scaleMax)*160}px" title="${wk.b}"></div>
+  <div class="section-title">Asistencias por persona</div>
+  <div class="attendance-grid">
+    <div class="person-card p1">
+      <div class="person-header">
+        <div class="person-avatar" id="av-p1">P1</div>
+        <div>
+          <div class="person-name" id="pn1">Persona 1</div>
+          <div class="person-count" id="pc1">0 entrenamientos</div>
         </div>
-        <div class="week-label">S${i+1}</div>
       </div>
-    `).join("");
-}
-
-function renderCalendar(){
-  const year = viewMonth.getFullYear(), month = viewMonth.getMonth();
-  document.getElementById("calMonth").textContent = viewMonth.toLocaleDateString("es-ES",{month:"long",year:"numeric"});
-  const firstDay = new Date(year, month, 1);
-  const startOffset = (firstDay.getDay()+6)%7;
-  const daysInMonth = new Date(year, month+1, 0).getDate();
-  const grid = document.getElementById("calGrid");
-  let html = "";
-  for (let i=0;i<startOffset;i++) html += `<div class="cal-cell empty"></div>`;
-  for (let d=1; d<=daysInMonth; d++){
-    const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    const dayEntries = entries.filter(e=>e.date===dateStr);
-    const hasA = dayEntries.some(e=>e.person==="A");
-    const hasB = dayEntries.some(e=>e.person==="B");
-    const isToday = dateStr === todayISO();
-    const isSelected = dateStr === selectedDay;
-    let cls = "cal-cell";
-    if (isToday) cls += " today";
-    if (isSelected) cls += " selected";
-    if (dayEntries.length) cls += " has-entries";
-    html += `<button class="${cls}" data-date="${dateStr}" data-has="${dayEntries.length?1:0}">
-      <span>${d}</span>
-      <span class="cal-dots">
-        ${hasA?'<span class="cal-dot" style="background:var(--accentA)"></span>':''}
-        ${hasB?'<span class="cal-dot" style="background:var(--accentB)"></span>':''}
-      </span>
-    </button>`;
-  }
-  grid.innerHTML = html;
-  grid.querySelectorAll(".cal-cell.has-entries").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const date = btn.dataset.date;
-      selectedDay = (selectedDay === date) ? null : date;
-      renderCalendar();
-      renderEntries();
-    });
-  });
-}
-
-function entryRowHtml(e){
-  const color = e.person==="A" ? ACCENT_A : ACCENT_B;
-  const name = e.person==="A" ? (config.nameA||"Persona A") : (config.nameB||"Persona B");
-  const thumb = e.photo
-    ? `<img class="entry-thumb" src="${e.photo}">`
-    : `<div class="entry-thumb placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5h11M6.5 17.5h11M4 9.5h2v5H4zM18 9.5h2v5h-2zM7 4v16M17 4v16"/></svg></div>`;
-  return `<div class="entry-row">
-    ${thumb}
-    <div class="entry-info">
-      <div class="entry-name"><span class="dot" style="width:8px;height:8px;background:${color}"></span>${name}</div>
-      <div class="entry-sub">${fmtDate(e.date)} · ${e.time} · ${e.duration} min</div>
+      <div class="streak-row" id="dots-p1"></div>
     </div>
-    <button class="entry-del" data-id="${e.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-  </div>`;
+    <div class="person-card p2">
+      <div class="person-header">
+        <div class="person-avatar" id="av-p2">P2</div>
+        <div>
+          <div class="person-name" id="pn2">Persona 2</div>
+          <div class="person-count" id="pc2">0 entrenamientos</div>
+        </div>
+      </div>
+      <div class="streak-row" id="dots-p2"></div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="section-title">Entrenamientos por semana</div>
+    <div class="chart-wrap">
+      <canvas id="weekly-chart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CALENDAR ═══ -->
+<div id="page-calendar" class="page">
+  <div class="calendar-section">
+    <div class="cal-nav">
+      <button onclick="prevMonth()">&#8592;</button>
+      <span class="cal-month" id="cal-month-label"></span>
+      <button onclick="nextMonth()">&#8594;</button>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot ld-p1"></div><span id="leg-p1">Persona 1</span></div>
+      <div class="legend-item"><div class="legend-dot ld-p2"></div><span id="leg-p2">Persona 2</span></div>
+    </div>
+    <div class="cal-grid">
+      <div class="cal-weekdays">
+        <div class="cal-wd">Lun</div><div class="cal-wd">Mar</div><div class="cal-wd">Mié</div>
+        <div class="cal-wd">Jue</div><div class="cal-wd">Vie</div><div class="cal-wd">Sáb</div><div class="cal-wd">Dom</div>
+      </div>
+      <div class="cal-days" id="cal-days"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ UPLOAD ═══ -->
+<div id="page-upload" class="page">
+  <div class="upload-form">
+    <div class="form-title">Registrar entrenamiento</div>
+
+    <div class="form-group">
+      <label>¿Quién entrena?</label>
+      <select id="f-person">
+        <option value="p1" id="opt-p1">Persona 1</option>
+        <option value="p2" id="opt-p2">Persona 2</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Fecha</label>
+      <input type="date" id="f-date">
+    </div>
+
+    <div class="form-group">
+      <label>Hora</label>
+      <input type="time" id="f-time">
+    </div>
+
+    <div class="form-group">
+      <label>Duración (minutos)</label>
+      <input type="number" id="f-duration" min="1" max="300" placeholder="60">
+    </div>
+
+    <div class="form-group">
+      <label>Foto del entrenamiento</label>
+      <div class="photo-drop" id="drop-zone">
+        <input type="file" id="f-photo" accept="image/*" capture="environment">
+        <div class="photo-drop-icon">📷</div>
+        <p>Toca para tomar foto o seleccionar</p>
+      </div>
+      <img class="photo-preview" id="photo-preview" alt="Vista previa">
+    </div>
+
+    <button class="btn-submit" id="btn-submit" onclick="submitWorkout()">Guardar entrenamiento</button>
+    <div id="upload-progress" style="font-size:.8rem;color:var(--text-muted);margin-top:.5rem;display:none"></div>
+  </div>
+</div>
+
+<!-- ═══ FEED ═══ -->
+<div id="page-feed" class="page">
+  <div class="section-title" style="margin-bottom:.75rem">Historial de entrenamientos</div>
+  <div id="feed-list" class="feed">
+    <div class="loading"><span class="spinner"></span>Cargando…</div>
+  </div>
+</div>
+
+<!-- ═══ CONFIG ═══ -->
+<div id="page-config" class="page">
+  <div class="config-card">
+    <h2>Configuración del reto</h2>
+    <div class="config-note">
+      Para conectar Firebase, edita el archivo <code>index.html</code> y reemplaza los valores en la sección <code>firebaseConfig</code> con los de tu proyecto. Luego configura aquí los datos del reto.
+    </div>
+
+    <div class="form-group">
+      <label>Nombre Persona 1</label>
+      <input type="text" id="cfg-p1" placeholder="ej. María">
+    </div>
+    <div class="form-group">
+      <label>Nombre Persona 2</label>
+      <input type="text" id="cfg-p2" placeholder="ej. Juan">
+    </div>
+    <div class="form-group">
+      <label>Fecha inicio del reto</label>
+      <input type="date" id="cfg-start">
+    </div>
+    <div class="form-group">
+      <label>Fecha fin del reto</label>
+      <input type="date" id="cfg-end">
+    </div>
+    <div class="form-group">
+      <label>Nombre del reto</label>
+      <input type="text" id="cfg-name" placeholder="ej. Reto 3 meses">
+    </div>
+    <button class="btn-save" onclick="saveConfig()">Guardar en Firebase</button>
+    <div class="config-status" id="cfg-status"></div>
+  </div>
+</div>
+
+</main>
+
+<!-- Modal foto -->
+<div class="modal-bg" id="modal-bg" onclick="closeModal()">
+  <button class="modal-close" onclick="closeModal()">✕</button>
+  <img class="modal-img" id="modal-img" src="" alt="Foto entrenamiento">
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// FIREBASE CONFIG — reemplaza estos valores
+// ═══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyCCpMkAwjImJkDScQftZu3vDzKl9ZYsTMY",
+  authDomain: "reto-fitness-50ddd.firebaseapp.com",
+  projectId: "reto-fitness-50ddd",
+  storageBucket: "reto-fitness-50ddd.firebasestorage.app",
+  messagingSenderId: "832822578298",
+  appId: "1:832822578298:web:e62a95908fca07f7283fc3"
+};
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+let db, storage, appConfig = null, workouts = [], weeklyChart = null;
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  storage = firebase.storage();
+  document.getElementById('connection-status').textContent = '● Conectado';
+  document.getElementById('connection-status').style.color = 'var(--accent)';
+} catch(e) {
+  document.getElementById('connection-status').textContent = '✕ Sin Firebase';
+  document.getElementById('connection-status').style.color = 'var(--danger)';
 }
 
-function renderEntries(){
-  const panel = document.getElementById("entriesPanel");
-  const title = document.getElementById("entriesTitle");
-  let html = "";
-  let list;
-  if (selectedDay){
-    title.textContent = `Entrenamientos del ${fmtDate(selectedDay)}`;
-    list = entries.filter(e=>e.date===selectedDay);
-    html = list.map(entryRowHtml).join("");
-    html += `<button class="close-link" id="closeDayDetail">Cerrar</button>`;
-  } else {
-    title.textContent = "Últimos registros";
-    list = [...entries].sort((a,b)=> (a.date+a.time < b.date+b.time) ? 1 : -1).slice(0,6);
-    if (list.length===0){
-      html = `<p class="empty-msg">Aún no hay entrenamientos registrados. Toca "Registrar entrenamiento" para añadir el primero.</p>`;
-    } else {
-      html = list.map(entryRowHtml).join("");
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'calendar') renderCalendar();
+  if (name === 'feed') renderFeed();
+  if (name === 'config') loadConfig();
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  setTimeout(() => { t.className = ''; }, 2800);
+}
+
+// ═══════════════════════════════════════════
+// LOAD CONFIG
+// ═══════════════════════════════════════════
+async function loadConfig() {
+  if (!db) return;
+  try {
+    const doc = await db.collection('config').doc('reto').get();
+    if (doc.exists) {
+      appConfig = doc.data();
+      applyConfig();
+      // pre-fill form
+      document.getElementById('cfg-p1').value = appConfig.p1Name || '';
+      document.getElementById('cfg-p2').value = appConfig.p2Name || '';
+      document.getElementById('cfg-start').value = appConfig.startDate || '';
+      document.getElementById('cfg-end').value = appConfig.endDate || '';
+      document.getElementById('cfg-name').value = appConfig.retoName || '';
     }
+  } catch(e) { console.error(e); }
+}
+
+function applyConfig() {
+  if (!appConfig) return;
+  const p1 = appConfig.p1Name || 'Persona 1';
+  const p2 = appConfig.p2Name || 'Persona 2';
+  ['pn1','p1name-label'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent = p1; });
+  ['pn2','p2name-label'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent = p2; });
+  document.getElementById('av-p1').textContent = p1.slice(0,2).toUpperCase();
+  document.getElementById('av-p2').textContent = p2.slice(0,2).toUpperCase();
+  document.getElementById('opt-p1').textContent = p1;
+  document.getElementById('opt-p2').textContent = p2;
+  document.getElementById('leg-p1').textContent = p1;
+  document.getElementById('leg-p2').textContent = p2;
+  if (appConfig.startDate && appConfig.endDate) updateCountdown();
+}
+
+async function saveConfig() {
+  if (!db) { toast('Firebase no configurado', 'error'); return; }
+  const cfg = {
+    p1Name: document.getElementById('cfg-p1').value.trim() || 'Persona 1',
+    p2Name: document.getElementById('cfg-p2').value.trim() || 'Persona 2',
+    startDate: document.getElementById('cfg-start').value,
+    endDate: document.getElementById('cfg-end').value,
+    retoName: document.getElementById('cfg-name').value.trim() || 'Reto Fitness'
+  };
+  try {
+    await db.collection('config').doc('reto').set(cfg);
+    appConfig = cfg;
+    applyConfig();
+    document.getElementById('cfg-status').textContent = '✓ Guardado correctamente';
+    toast('Configuración guardada');
+  } catch(e) { toast('Error al guardar', 'error'); }
+}
+
+// ═══════════════════════════════════════════
+// COUNTDOWN
+// ═══════════════════════════════════════════
+function updateCountdown() {
+  if (!appConfig) return;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const start = new Date(appConfig.startDate + 'T00:00:00');
+  const end = new Date(appConfig.endDate + 'T00:00:00');
+  const total = Math.round((end - start) / 86400000);
+  const elapsed = Math.round((now - start) / 86400000);
+  const remaining = Math.max(0, Math.round((end - now) / 86400000));
+  const pct = Math.min(100, Math.max(0, Math.round(elapsed / total * 100)));
+  const circ = 2 * Math.PI * 46;
+  const offset = circ * (1 - (remaining / total));
+
+  document.getElementById('days-left').textContent = remaining;
+  document.getElementById('reto-title').textContent = appConfig.retoName || 'Reto Fitness';
+  document.getElementById('reto-dates').textContent =
+    formatDate(appConfig.startDate) + ' → ' + formatDate(appConfig.endDate);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '% completado';
+  const arc = document.getElementById('ring-arc');
+  arc.style.strokeDasharray = circ;
+  arc.style.strokeDashoffset = circ - offset;
+}
+
+function formatDate(d) {
+  if (!d) return '–';
+  const parts = d.split('-');
+  return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+
+// ═══════════════════════════════════════════
+// REALTIME LISTENER
+// ═══════════════════════════════════════════
+function startListener() {
+  if (!db) return;
+  db.collection('workouts').orderBy('date', 'desc').onSnapshot(snap => {
+    workouts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    updateDashboard();
+    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+    if (document.getElementById('page-feed').classList.contains('active')) renderFeed();
+  });
+}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+function updateDashboard() {
+  const p1w = workouts.filter(w => w.person === 'p1');
+  const p2w = workouts.filter(w => w.person === 'p2');
+  document.getElementById('stat-p1').textContent = p1w.length;
+  document.getElementById('stat-p2').textContent = p2w.length;
+  document.getElementById('stat-total').textContent = workouts.length;
+  document.getElementById('pc1').textContent = p1w.length + ' entrenamientos';
+  document.getElementById('pc2').textContent = p2w.length + ' entrenamientos';
+
+  if (workouts.length > 0) {
+    const last = workouts[0];
+    document.getElementById('stat-last').textContent = formatDate(last.date);
+    const who = last.person === 'p1'
+      ? (appConfig?.p1Name || 'Persona 1')
+      : (appConfig?.p2Name || 'Persona 2');
+    document.getElementById('stat-last-who').textContent = who;
   }
-  panel.innerHTML = html;
-  panel.querySelectorAll(".entry-del").forEach(btn=>{
-    btn.addEventListener("click", ()=> deleteEntry(btn.dataset.id));
-  });
-  const closeBtn = document.getElementById("closeDayDetail");
-  if (closeBtn) closeBtn.addEventListener("click", ()=>{ selectedDay=null; renderCalendar(); renderEntries(); });
+
+  renderStreakDots('dots-p1', p1w.length);
+  renderStreakDots('dots-p2', p2w.length);
+  renderWeeklyChart();
 }
 
-// ---------- modals ----------
-function renderPersonToggle(){
-  const el = document.getElementById("personToggle");
-  el.innerHTML = `
-    <button class="person-btn ${selectedPerson==='A'?'active-a':''}" data-p="A">${config.nameA||"Persona A"}</button>
-    <button class="person-btn ${selectedPerson==='B'?'active-b':''}" data-p="B">${config.nameB||"Persona B"}</button>
-  `;
-  el.querySelectorAll(".person-btn").forEach(btn=>{
-    btn.addEventListener("click", ()=>{ selectedPerson = btn.dataset.p; renderPersonToggle(); });
+function renderStreakDots(containerId, count) {
+  const el = document.getElementById(containerId);
+  const total = 90;
+  let html = '';
+  for (let i = 0; i < total; i++) {
+    html += `<div class="streak-dot ${i < count ? 'done' : ''}"></div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderWeeklyChart() {
+  const weeks = {};
+  workouts.forEach(w => {
+    if (!w.date) return;
+    const d = new Date(w.date + 'T00:00:00');
+    const weekStart = new Date(d);
+    weekStart.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const key = weekStart.toISOString().slice(0,10);
+    if (!weeks[key]) weeks[key] = { p1: 0, p2: 0 };
+    weeks[key][w.person] = (weeks[key][w.person] || 0) + 1;
+  });
+
+  const sorted = Object.keys(weeks).sort().slice(-8);
+  const labels = sorted.map(k => {
+    const d = new Date(k + 'T00:00:00');
+    return d.getDate() + '/' + (d.getMonth()+1);
+  });
+  const p1data = sorted.map(k => weeks[k].p1 || 0);
+  const p2data = sorted.map(k => weeks[k].p2 || 0);
+
+  const ctx = document.getElementById('weekly-chart').getContext('2d');
+  if (weeklyChart) weeklyChart.destroy();
+  weeklyChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: appConfig?.p1Name || 'Persona 1', data: p1data, backgroundColor: 'rgba(184,240,59,.7)', borderRadius: 4 },
+        { label: appConfig?.p2Name || 'Persona 2', data: p2data, backgroundColor: 'rgba(56,189,248,.7)', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#888', font: { family: 'Inter', size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#666', font: { size: 10 } }, grid: { color: '#2e2e2e' } },
+        y: { ticks: { color: '#666', precision: 0 }, grid: { color: '#2e2e2e' }, beginAtZero: true }
+      }
+    }
   });
 }
 
-function openLogModal(){
-  selectedPerson = "A";
-  pendingPhoto = null;
-  document.getElementById("inpDate").value = todayISO();
+// ═══════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════
+function renderCalendar() {
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-month-label').textContent = months[calMonth] + ' ' + calYear;
+
+  const firstDay = new Date(calYear, calMonth, 1);
+  const lastDay = new Date(calYear, calMonth + 1, 0);
+  let startWd = (firstDay.getDay() + 6) % 7; // Monday=0
+
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const byDate = {};
+  workouts.forEach(w => {
+    if (!w.date) return;
+    if (!byDate[w.date]) byDate[w.date] = [];
+    byDate[w.date].push(w.person);
+  });
+
+  let html = '';
+  // Prev month padding
+  for (let i = 0; i < startWd; i++) {
+    const d = new Date(calYear, calMonth, -(startWd - 1) + i);
+    html += `<div class="cal-day other-month"><span class="day-num">${d.getDate()}</span></div>`;
+  }
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const dateStr = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const thisDay = new Date(calYear, calMonth, d);
+    const isToday = thisDay.getTime() === today.getTime();
+    const persons = byDate[dateStr] || [];
+    const dots = persons.map(p => `<div class="day-dot ${p}" title="${p==='p1'?(appConfig?.p1Name||'P1'):(appConfig?.p2Name||'P2')}"></div>`).join('');
+    html += `<div class="cal-day${isToday?' today':''}">
+      <span class="day-num">${d}</span>
+      <div class="day-dots">${dots}</div>
+    </div>`;
+  }
+
+  document.getElementById('cal-days').innerHTML = html;
+}
+
+function prevMonth() {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+function nextMonth() {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+
+// ═══════════════════════════════════════════
+// UPLOAD
+// ═══════════════════════════════════════════
+let selectedFile = null;
+
+// Set defaults
+window.addEventListener('DOMContentLoaded', () => {
   const now = new Date();
-  document.getElementById("inpTime").value = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
-  document.getElementById("inpDuration").value = 45;
-  document.getElementById("photoPreview").style.display = "none";
-  document.getElementById("photoPreview").src = "";
-  document.getElementById("photoBtnLabel").textContent = "Subir foto";
-  document.getElementById("inpPhoto").value = "";
-  renderPersonToggle();
-  document.getElementById("logOverlay").style.display = "flex";
-}
+  document.getElementById('f-date').value = now.toISOString().slice(0,10);
+  document.getElementById('f-time').value = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
 
-function openSettingsModal(){
-  document.getElementById("cfgNameA").value = config.nameA||"";
-  document.getElementById("cfgNameB").value = config.nameB||"";
-  document.getElementById("cfgStart").value = config.startDate;
-  document.getElementById("cfgEnd").value = config.endDate;
-  document.getElementById("settingsOverlay").style.display = "flex";
-}
+  document.getElementById('f-photo').addEventListener('change', e => {
+    selectedFile = e.target.files[0];
+    if (selectedFile) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const preview = document.getElementById('photo-preview');
+        preview.src = ev.target.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(selectedFile);
+    }
+  });
 
-// ---------- events ----------
-document.getElementById("btnLog").addEventListener("click", openLogModal);
-document.getElementById("closeLog").addEventListener("click", ()=> document.getElementById("logOverlay").style.display="none");
-document.getElementById("btnSettings").addEventListener("click", openSettingsModal);
-document.getElementById("closeSettings").addEventListener("click", ()=> document.getElementById("settingsOverlay").style.display="none");
+  const dropZone = document.getElementById('drop-zone');
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('dragover');
+    selectedFile = e.dataTransfer.files[0];
+    if (selectedFile) document.getElementById('f-photo').dispatchEvent(new Event('change'));
+  });
 
-document.getElementById("btnPhoto").addEventListener("click", ()=> document.getElementById("inpPhoto").click());
-document.getElementById("inpPhoto").addEventListener("change", async (e)=>{
-  const file = e.target.files?.[0];
-  if (!file) return;
-  document.getElementById("photoBtnLabel").textContent = "Procesando...";
-  try{
-    pendingPhoto = await compressImage(file);
-    const preview = document.getElementById("photoPreview");
-    preview.src = pendingPhoto;
-    preview.style.display = "block";
-    document.getElementById("photoBtnLabel").textContent = "Cambiar foto";
-  } catch(err){
-    document.getElementById("photoBtnLabel").textContent = "Subir foto";
+  loadConfig().then(() => {
+    startListener();
+  });
+});
+
+async function submitWorkout() {
+  if (!db) { toast('Firebase no configurado', 'error'); return; }
+  const person = document.getElementById('f-person').value;
+  const date = document.getElementById('f-date').value;
+  const time = document.getElementById('f-time').value;
+  const duration = document.getElementById('f-duration').value;
+  if (!date || !time || !duration) { toast('Completa todos los campos', 'error'); return; }
+
+  const btn = document.getElementById('btn-submit');
+  const prog = document.getElementById('upload-progress');
+  btn.disabled = true;
+  prog.style.display = 'block';
+  prog.textContent = 'Guardando…';
+
+  try {
+    let photoURL = null;
+    if (selectedFile) {
+      prog.textContent = 'Subiendo foto…';
+      const ref = storage.ref('workouts/' + Date.now() + '_' + selectedFile.name);
+      const snap = await ref.put(selectedFile);
+      photoURL = await snap.ref.getDownloadURL();
+    }
+
+    await db.collection('workouts').add({
+      person, date, time,
+      duration: Number(duration),
+      photoURL,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    toast('¡Entrenamiento registrado!');
+    prog.style.display = 'none';
+    document.getElementById('f-duration').value = '';
+    document.getElementById('f-photo').value = '';
+    document.getElementById('photo-preview').style.display = 'none';
+    selectedFile = null;
+    const now = new Date();
+    document.getElementById('f-date').value = now.toISOString().slice(0,10);
+  } catch(e) {
+    console.error(e);
+    toast('Error al guardar: ' + e.message, 'error');
+    prog.style.display = 'none';
   }
-});
+  btn.disabled = false;
+}
 
-document.getElementById("btnSaveEntry").addEventListener("click", async ()=>{
-  const entry = {
-    person: selectedPerson,
-    date: document.getElementById("inpDate").value,
-    time: document.getElementById("inpTime").value,
-    duration: Number(document.getElementById("inpDuration").value),
-    photo: pendingPhoto,
-  };
-  await addEntry(entry);
-  document.getElementById("logOverlay").style.display = "none";
-});
+// ═══════════════════════════════════════════
+// FEED
+// ═══════════════════════════════════════════
+function renderFeed() {
+  const el = document.getElementById('feed-list');
+  if (workouts.length === 0) {
+    el.innerHTML = '<div class="loading">No hay entrenamientos aún</div>';
+    return;
+  }
+  el.innerHTML = workouts.map(w => {
+    const name = w.person === 'p1' ? (appConfig?.p1Name||'Persona 1') : (appConfig?.p2Name||'Persona 2');
+    const colorClass = w.person === 'p1' ? 'p1c' : '';
+    const pColor = w.person === 'p1' ? 'p2' : 'p2'; // reused var; keeps it separate
+    const imgHtml = w.photoURL
+      ? `<img class="feed-img" src="${w.photoURL}" alt="foto" onclick="openModal('${w.photoURL}')">`
+      : `<div class="feed-no-img">🏋️</div>`;
+    return `<div class="feed-item">
+      <div class="feed-accent ${w.person}"></div>
+      <div class="feed-content">
+        <div class="feed-header">
+          <span class="feed-person ${w.person==='p1'?'p1c':'p2c'}">${name}</span>
+          <span class="feed-date">${formatDate(w.date)} ${w.time||''}</span>
+        </div>
+        <div class="feed-meta">${w.duration} minutos</div>
+      </div>
+      ${imgHtml}
+    </div>`;
+  }).join('');
+}
 
-document.getElementById("btnSaveConfig").addEventListener("click", async ()=>{
-  const newConfig = {
-    nameA: document.getElementById("cfgNameA").value || "Persona A",
-    nameB: document.getElementById("cfgNameB").value || "Persona B",
-    startDate: document.getElementById("cfgStart").value,
-    endDate: document.getElementById("cfgEnd").value,
-  };
-  await saveConfig(newConfig);
-  document.getElementById("settingsOverlay").style.display = "none";
-});
-
-document.getElementById("calPrev").addEventListener("click", ()=>{
-  viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth()-1, 1);
-  renderCalendar();
-});
-document.getElementById("calNext").addEventListener("click", ()=>{
-  viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+1, 1);
-  renderCalendar();
-});
-
-// ---------- init ----------
-initStorage().then(renderAll);
+// ═══════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════
+function openModal(url) {
+  document.getElementById('modal-img').src = url;
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+}
 </script>
 </body>
 </html>
